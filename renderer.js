@@ -4,6 +4,10 @@
 
 const FeedParser = require('feedparser');
 const request = require('request'); 
+const fs = require('fs');
+const jquery = require('jquery'); 
+const slick = require('slick-carousel'); 
+const Grade = require('grade-js');
 
 var feed="http://ffffound.com/feed?offset=0";
 var feedData = [];
@@ -33,29 +37,70 @@ feedparser.on('error', function (error) {
 feedparser.on('readable', function () {
     // This is where the action is!
     var stream = this; // `this` is `feedparser`, which is a stream
-    var meta = this.meta; // **NOTE** the "meta" is always available in the context of the feedparser instance
     var item;
 
     while (item = stream.read()) {
-        console.log(item);
-        feedData.push(item.summary);
+        //console.log(item);
+        feedData.push(item.image.url);
     }
 });
 
 feedparser.on('end', function() {
-    console.log(feedData.length);
+    //console.log(feedData);
 
-    for (let i = 1; i < feedData.length; i++) {
+    for (let i = 0; i < feedData.length; i++) {
         let myApp = document.getElementById('app');
         let div = document.createElement("div");
-        div.class = 'img-' + i;
-        div.innerHTML = feedData[i];
+        let innerDiv = div.appendChild(document.createElement("div"));
+        innerDiv.className = "gradient";
+        let url = feedData[i].replace('_s.jpg','_m.jpg').replace('_s.gif','_m.gif');
+        let filename = url.replace('http://img-thumb.ffffound.com/static-data/assets/','').replace('/','-');
+        let path = './imgcache/' + filename;
+
+        if (!fs.existsSync(path)) {
+            request(url, {encoding: 'binary'}, function(error, response, body) {
+                fs.writeFile(path, body, 'binary', function (err) {
+                    console.log(err);
+                });
+            });
+        } else {
+            // See if images were skipped
+            console.log('skip');
+        }
+
+        /**/
+
+        let img = document.createElement("img");
+        img.className = 'slider-img';
+        img.src = path;
+        innerDiv.appendChild(img);
+        //let selectImg = document.querySelectorAll('.slider-img');
+        //selectImg.width = "100px";
+        //console.log(path);
 
         myApp.appendChild(div);
-        console.log(feedData[i]);
-    }
-});
 
+        if(i == feedData.length - 1){ console.log('done'); }
+        //Grade(document.querySelectorAll('.gradient'));
+    
+        // REWRITE THIS BLOCK
+        // refactor so images are loaded outside of this getter
+        // cmon son...
+    }
+
+    jquery('.slider').slick({
+        dots: false,
+        infinite: true,
+        speed: 2000,
+        fade: true,
+        cssEase: 'linear',
+        autoplay: true,
+        autoplaySpeed: 5000,
+        pauseOnHover: false
+    });
+
+
+});
 
 
 
