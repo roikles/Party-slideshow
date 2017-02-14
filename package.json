@@ -13,8 +13,10 @@
     "feedparser": "^2.1.0"
   },
   "dependencies": {
+    "electron-reload": "^1.1.0",
     "grade-js": "^1.0.10",
     "jquery": "^3.1.1",
+    "node-vibrant": "^2.1.2",
     "slick-carousel": "^1.6.0",
     "xml2obj-stream": "^0.1.3"
   }

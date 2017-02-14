@@ -7,11 +7,14 @@ const request = require('request');
 const fs = require('fs');
 const jquery = require('jquery'); 
 const slick = require('slick-carousel'); 
-const Grade = require('grade-js');
+const vibrant = require('node-vibrant');
 
-var feed="http://ffffound.com/feed?offset=0";
+//--
+
+var feed = "http://ffffound.com/feed?offset=50";
 var feedData = [];
 
+// action this request again in orderr to repeat
 var req = request(feed);
 var feedparser = new FeedParser();
 
@@ -45,48 +48,106 @@ feedparser.on('readable', function () {
     }
 });
 
-feedparser.on('end', function() {
-    //console.log(feedData);
+/**
+ * Just use this to get the data
+ */
 
+feedparser.on('end', function() {
+
+    // Loop through each of the returned images from
+    // the supplied URL
     for (let i = 0; i < feedData.length; i++) {
-        let myApp = document.getElementById('app');
-        let div = document.createElement("div");
-        let innerDiv = div.appendChild(document.createElement("div"));
-        innerDiv.className = "gradient";
-        let url = feedData[i].replace('_s.jpg','_m.jpg').replace('_s.gif','_m.gif');
+        
+        let url = feedData[i]
+            .replace('_s.jpg','_m.jpg')
+            .replace('_s.jpeg','_m.jpeg')
+            .replace('_s.png','_m.png')
+            .replace('_s.gif','_m.gif');
         let filename = url.replace('http://img-thumb.ffffound.com/static-data/assets/','').replace('/','-');
         let path = './imgcache/' + filename;
 
         if (!fs.existsSync(path)) {
             request(url, {encoding: 'binary'}, function(error, response, body) {
                 fs.writeFile(path, body, 'binary', function (err) {
-                    console.log(err);
+                    //console.log(err);
                 });
             });
-        } else {
-            // See if images were skipped
-            console.log('skip');
         }
-
-        /**/
-
-        let img = document.createElement("img");
-        img.className = 'slider-img';
-        img.src = path;
-        innerDiv.appendChild(img);
-        //let selectImg = document.querySelectorAll('.slider-img');
-        //selectImg.width = "100px";
-        //console.log(path);
-
-        myApp.appendChild(div);
-
-        if(i == feedData.length - 1){ console.log('done'); }
-        //Grade(document.querySelectorAll('.gradient'));
-    
-        // REWRITE THIS BLOCK
-        // refactor so images are loaded outside of this getter
-        // cmon son...
     }
+
+});
+
+
+/**
+ * createImage
+ *
+ * Creates an image from a url and injects it into the slider
+ */
+function createImage(url){
+    let img = '<img src="' + url + '">';
+        img.className = 'slider-img';
+
+    //console.log(img);
+
+    let v = new vibrant(url);
+    v.getSwatches(function(err, swatch) {
+        if (err) {
+            console.log(err);
+        } else {
+            let darkVibrant = swatch.DarkVibrant.rgb;
+            /*let lightVibrant = swatch.LightVibrant.rgb;
+            let darkMuted = swatch.DarkMuted.rgb;
+            let lightMuted = swatch.LightMuted.rgb;
+            let muted = swatch.Muted.rgb;
+            let vibrant = swatch.Vibrant.rgb;*/
+
+            jquery('.slider').slick('slickAdd',"<div><div class='slide-wrapper'>" + img + "</div></div>");
+
+            //let wrapper = document.querySelectorAll('body');
+
+            //document.querySelectorAll('.slide-wrapper').style.background = 'background-image(linear-gradient(rgba('+ darkVibrant[0] +','+ darkVibrant[1] +','+ darkVibrant[2] +',0), rgba(255,0,0,0)))';
+            //wrapper.style.background = 'background-image(linear-gradient(rgba(0,0,0,1), rgba(255,0,0,1)))';
+        }
+    })
+
+   
+}
+
+
+/**
+ * getImages
+ *
+ * Loads an array of filenames from the cache directory
+ * and makes sure the extension is valid. 
+ * Valid image urls are then run through the createImage 
+ * function.
+ * 
+ * @return {[type]} [description]
+ */
+function getImages(folder){
+    let validExtensions = ['jpg','jpeg','gif','png'];
+    
+    // Read the file directory and loop through all files
+    fs.readdir(folder, (err, files) => {
+        files.forEach(file => {
+            
+            // Get extension for each file
+            let extension = file.split('.').pop();
+            
+            // Make sure extension is in the validExtensions array
+            if (validExtensions.indexOf(extension) !== -1) {
+                createImage('./' + folder + '/' + file);
+            }
+  
+        });
+    });
+
+    console.log('getImages done');
+}
+
+
+
+function initSlider(){
 
     jquery('.slider').slick({
         dots: false,
@@ -99,9 +160,8 @@ feedparser.on('end', function() {
         pauseOnHover: false
     });
 
+    getImages('imgcache');
 
-});
+}
 
-
-
-//console.log(feedData);
+initSlider();
