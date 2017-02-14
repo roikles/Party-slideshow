@@ -152,7 +152,7 @@ function initSlider(){
     jquery('.slider').slick({
         dots: false,
         infinite: true,
-        speed: 2000,
+        speed: 1000,
         fade: true,
         cssEase: 'linear',
         autoplay: true,
