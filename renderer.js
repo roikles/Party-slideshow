@@ -11,7 +11,8 @@ const vibrant = require('node-vibrant');
 
 //--
 
-var feed = "http://ffffound.com/feed?offset=50";
+//var feed = "http://ffffound.com/feed?offset=200";
+var feed = "http://ffffound.com/home/osmangranda/found/feed?offset=200";
 var feedData = [];
 
 // action this request again in orderr to repeat
@@ -38,12 +39,10 @@ feedparser.on('error', function (error) {
 });
 
 feedparser.on('readable', function () {
-    // This is where the action is!
-    var stream = this; // `this` is `feedparser`, which is a stream
+    var stream = this;
     var item;
 
     while (item = stream.read()) {
-        //console.log(item);
         feedData.push(item.image.url);
     }
 });
@@ -88,29 +87,30 @@ function createImage(url){
         img.className = 'slider-img';
 
     //console.log(img);
+    //console.log(url);
+    //let v = new vibrant(url);
 
-    let v = new vibrant(url);
-    v.getSwatches(function(err, swatch) {
-        if (err) {
-            console.log(err);
-        } else {
-            let darkVibrant = swatch.DarkVibrant.rgb;
-            /*let lightVibrant = swatch.LightVibrant.rgb;
-            let darkMuted = swatch.DarkMuted.rgb;
-            let lightMuted = swatch.LightMuted.rgb;
-            let muted = swatch.Muted.rgb;
-            let vibrant = swatch.Vibrant.rgb;*/
+    vibrant.from(url).getPalette(function(err, swatches) {
+        if (err) throw err;
+        console.log(swatches);
+        let darkMuted = swatches.DarkMuted.rgb;
+        let darkVibrant = swatches.DarkVibrant.rgb;
+        //let lightMuted = swatches.LightMuted.rgb;
+        //let lightVibrant = swatches.LightVibrant.rgb;
+        let muted = swatches.Muted.rgb;
+        let vibrant = swatches.Vibrant.rgb;
 
-            jquery('.slider').slick('slickAdd',"<div><div class='slide-wrapper'>" + img + "</div></div>");
+        for (var key in swatches) {
+          var swatch = swatches[key];
+          //console.log(swatch);
+          if (swatch) {
+            var rgb = swatch.getRgb();
+        //    console.log(key + ": " + rgb);
 
-            //let wrapper = document.querySelectorAll('body');
-
-            //document.querySelectorAll('.slide-wrapper').style.background = 'background-image(linear-gradient(rgba('+ darkVibrant[0] +','+ darkVibrant[1] +','+ darkVibrant[2] +',0), rgba(255,0,0,0)))';
-            //wrapper.style.background = 'background-image(linear-gradient(rgba(0,0,0,1), rgba(255,0,0,1)))';
+          }
         }
-    })
-
-   
+        jquery('.slider').slick('slickAdd',"<div><div class='slide-wrapper' style='background-image: linear-gradient(rgba(" + darkVibrant + ",0.5),rgba(" + vibrant + ",0.5),rgba(" + muted + ",0.5));'>" + img + "</div></div>");
+    });   
 }
 
 
@@ -125,7 +125,7 @@ function createImage(url){
  * @return {[type]} [description]
  */
 function getImages(folder){
-    let validExtensions = ['jpg','jpeg','gif','png'];
+    let validExtensions = ['jpg','jpeg','png'];
     
     // Read the file directory and loop through all files
     fs.readdir(folder, (err, files) => {
@@ -136,7 +136,7 @@ function getImages(folder){
             
             // Make sure extension is in the validExtensions array
             if (validExtensions.indexOf(extension) !== -1) {
-                createImage('./' + folder + '/' + file);
+                createImage(folder + '/' + file);
             }
   
         });
